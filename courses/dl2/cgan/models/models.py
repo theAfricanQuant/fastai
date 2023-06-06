@@ -14,7 +14,7 @@ def create_model(opt):
         from .test_model import TestModel
         model = TestModel()
     else:
-        raise ValueError("Model [%s] not recognized." % opt.model)
+        raise ValueError(f"Model [{opt.model}] not recognized.")
     model.initialize(opt)
-    print("model [%s] was created" % (model.name()))
+    print(f"model [{model.name()}] was created")
     return model

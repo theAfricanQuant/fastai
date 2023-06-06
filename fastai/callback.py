@@ -100,9 +100,10 @@ class OptimWrapper():
         if 'betas' in self.opt_keys: self._mom,self._beta = self.read_val('betas')
         if 'weight_decay' in self.opt_keys: self._wd = self.read_val('weight_decay')
 
-    def set_val(self, key:str, val:Any, bn_groups:bool=True)->Any:
+    def set_val(self, key:str, val:Any, bn_groups:bool=True) -> Any:
         "Set the values inside the optimizer dictionary at the key."
-        if is_tuple(val): val = [(v1,v2) for v1,v2 in zip(*val)]
+        if is_tuple(val):
+            val = list(zip(*val))
         for v,pg1,pg2 in zip(val,self.opt.param_groups[::2],self.opt.param_groups[1::2]):
             pg1[key] = v
             if bn_groups: pg2[key] = v
@@ -117,37 +118,29 @@ class OptimWrapper():
 class Callback():
     "Base class for callbacks that want to record values, dynamically change learner params, etc."
     _order=0
-    def on_train_begin(self, **kwargs:Any)->None:
+    def on_train_begin(self, **kwargs:Any) -> None:
         "To initialize constants in the callback."
-        pass
-    def on_epoch_begin(self, **kwargs:Any)->None:
+    def on_epoch_begin(self, **kwargs:Any) -> None:
         "At the beginning of each epoch."
-        pass
-    def on_batch_begin(self, **kwargs:Any)->None:
+    def on_batch_begin(self, **kwargs:Any) -> None:
         "Set HP before the step is done. Returns xb, yb (which can allow us to modify the input at that step if needed)."
-        pass
-    def on_loss_begin(self, **kwargs:Any)->None:
+    def on_loss_begin(self, **kwargs:Any) -> None:
         "Called after forward pass but before loss has been computed. Returns the output (which can allow us to modify it)."
-        pass
     def on_backward_begin(self, **kwargs:Any)->None:
         """Called after the forward pass and the loss has been computed, but before backprop.
            Returns the loss (which can allow us to modify it, for instance for reg functions)"""
         pass
-    def on_backward_end(self, **kwargs:Any)->None:
+    def on_backward_end(self, **kwargs:Any) -> None:
         "Called after backprop but before optimizer step. Useful for true weight decay in AdamW."
-        pass
-    def on_step_end(self, **kwargs:Any)->None:
+    def on_step_end(self, **kwargs:Any) -> None:
         "Called after the step of the optimizer but before the gradients are zeroed."
-        pass
-    def on_batch_end(self, **kwargs:Any)->None:
+    def on_batch_end(self, **kwargs:Any) -> None:
         "Called at the end of the batch."
-        pass
     def on_epoch_end(self, **kwargs:Any)->bool:
         "Called at the end of an epoch."
         return False
-    def on_train_end(self, **kwargs:Any)->None:
+    def on_train_end(self, **kwargs:Any) -> None:
         "Useful for cleaning up things and saving files/models."
-        pass
 
 class SmoothenValue():
     "Create a smooth moving average for a value (loss, etc)."

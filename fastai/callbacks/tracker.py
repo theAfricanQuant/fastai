@@ -32,8 +32,11 @@ class TrackerCallback(LearnerCallback):
         if self.mode not in ['auto', 'min', 'max']:
             warn(f'{self.__class__} mode {self.mode} is invalid, falling back to "auto" mode.')
             self.mode = 'auto'
-        mode_dict = {'min': np.less, 'max':np.greater}
-        mode_dict['auto'] = np.less if 'loss' in self.monitor else np.greater
+        mode_dict = {
+            'min': np.less,
+            'max': np.greater,
+            'auto': np.less if 'loss' in self.monitor else np.greater,
+        }
         self.operator = mode_dict[self.mode]
 
     def on_train_begin(self, **kwargs:Any)->None:

@@ -44,7 +44,7 @@ def test_partition_functionality():
     def test_partition(a, sz, ex):
         result = partition(a, sz)
         assert len(result) == len(ex)
-        assert all([a == b for a, b in zip(result, ex)])
+        assert all(a == b for a, b in zip(result, ex))
 
     a = [1,2,3,4,5]
 

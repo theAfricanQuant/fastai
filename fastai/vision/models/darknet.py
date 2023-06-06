@@ -17,8 +17,9 @@ class Darknet(nn.Module):
     "https://github.com/pjreddie/darknet"
     def make_group_layer(self, ch_in:int, num_blocks:int, stride:int=1):
         "starts with conv layer - `ch_in` channels in - then has `num_blocks` `ResLayer`"
-        return [conv_layer(ch_in, ch_in*2,stride=stride)
-               ] + [(ResLayer(ch_in*2)) for i in range(num_blocks)]
+        return [conv_layer(ch_in, ch_in * 2, stride=stride)] + [
+            (ResLayer(ch_in * 2)) for _ in range(num_blocks)
+        ]
 
     def __init__(self, num_blocks:Collection[int], num_classes:int, nf=32):
         "create darknet with `nf` and `num_blocks` layers"

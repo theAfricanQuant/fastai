@@ -47,7 +47,7 @@ def train_lm(dir_path, pretrain_path, cuda_id=0, cl=25, pretrain_id='wt103', lm_
     torch.cuda.set_device(cuda_id)
 
     PRE  = 'bwd_' if backwards else 'fwd_'
-    PRE = 'bpe_' + PRE if bpe else PRE
+    PRE = f'bpe_{PRE}' if bpe else PRE
     IDS = 'bpe' if bpe else 'ids'
     train_file_id = train_file_id if train_file_id == '' else f'_{train_file_id}'
     joined_id = 'lm_' if joined else ''
@@ -95,38 +95,29 @@ def train_lm(dir_path, pretrain_path, cuda_id=0, cl=25, pretrain_id='wt103', lm_
     learner.reg_fn = partial(seq2seq_reg, alpha=2, beta=1)
     learner.clip=0.3
     learner.metrics = [accuracy]
-    wd=1e-7
-
     lrs = np.array([lr/6,lr/3,lr,lr/2]) if use_discriminative else lr
-    if preload and startat == 0:
-        wgts = torch.load(pre_lm_path, map_location=lambda storage, loc: storage)
-        if bpe:
+    if preload:
+        if startat == 0:
+            wgts = torch.load(pre_lm_path, map_location=lambda storage, loc: storage)
+            if not bpe:
+                print('Loading pretrained weights...')
+                ew = to_np(wgts['0.encoder.weight'])
+                row_m = ew.mean(0)
+
+                itos2 = pickle.load(open(pretrain_path / 'tmp' / 'itos.pkl', 'rb'))
+                stoi2 = collections.defaultdict(lambda:-1, {v:k for k,v in enumerate(itos2)})
+                nw = np.zeros((vs, em_sz), dtype=np.float32)
+                nb = np.zeros((vs,), dtype=np.float32)
+                for i, w in enumerate(itos):
+                    r = stoi2[w]
+                    nw[i] = ew[r] if r>=0 else row_m
+                wgts['0.encoder.weight'] = T(nw)
+                wgts['0.encoder_with_dropout.embed.weight'] = T(np.copy(nw))
+                wgts['1.decoder.weight'] = T(np.copy(nw))
             learner.model.load_state_dict(wgts)
         else:
-            print(f'Loading pretrained weights...')
-            ew = to_np(wgts['0.encoder.weight'])
-            row_m = ew.mean(0)
-
-            itos2 = pickle.load(open(pretrain_path / 'tmp' / f'itos.pkl', 'rb'))
-            stoi2 = collections.defaultdict(lambda:-1, {v:k for k,v in enumerate(itos2)})
-            nw = np.zeros((vs, em_sz), dtype=np.float32)
-            nb = np.zeros((vs,), dtype=np.float32)
-            for i,w in enumerate(itos):
-                r = stoi2[w]
-                if r>=0:
-                    nw[i] = ew[r]
-                else:
-                    nw[i] = row_m
-
-            wgts['0.encoder.weight'] = T(nw)
-            wgts['0.encoder_with_dropout.embed.weight'] = T(np.copy(nw))
-            wgts['1.decoder.weight'] = T(np.copy(nw))
-            learner.model.load_state_dict(wgts)
-            #learner.freeze_to(-1)
-            #learner.fit(lrs, 1, wds=wd, use_clr=(6,4), cycle_len=1)
-    elif preload:
-        print('Loading LM that was already fine-tuned on the target data...')
-        learner.load(lm_path)
+            print('Loading LM that was already fine-tuned on the target data...')
+            learner.load(lm_path)
 
     if not notrain:
         learner.unfreeze()
@@ -141,13 +132,14 @@ def train_lm(dir_path, pretrain_path, cuda_id=0, cl=25, pretrain_id='wt103', lm_
         if early_stopping:
             callbacks.append(EarlyStopping(learner, lm_path, enc_path, patience=5))
             print('Using early stopping...')
+        wd=1e-7
+
         learner.fit(lrs, n_cycles, wds=wd, use_clr=(32,10) if use_clr else None, cycle_len=cl,
                     callbacks=callbacks)
-        learner.save(lm_path)
-        learner.save_encoder(enc_path)
     else:
         print('No more fine-tuning used. Saving original LM...')
-        learner.save(lm_path)
-        learner.save_encoder(enc_path)
+
+    learner.save(lm_path)
+    learner.save_encoder(enc_path)
 
 if __name__ == '__main__': fire.Fire(train_lm)

@@ -14,9 +14,9 @@ def CreateDataset(opt):
         from .single_dataset import SingleDataset
         dataset = SingleDataset()
     else:
-        raise ValueError("Dataset [%s] not recognized." % opt.dataset_mode)
+        raise ValueError(f"Dataset [{opt.dataset_mode}] not recognized.")
 
-    print("dataset [%s] was created" % (dataset.name()))
+    print(f"dataset [{dataset.name()}] was created")
     dataset.initialize(opt)
     return dataset
 

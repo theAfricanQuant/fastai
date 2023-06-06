@@ -51,10 +51,13 @@ class TabularDataset(DatasetBase):
 
     @classmethod
     def from_dataframe(cls, df:DataFrame, dep_var:str, tfms:OptTabTfms=None, cat_names:OptStrList=None,
-                       cont_names:OptStrList=None, stats:OptStats=None, log_output:bool=False)->'TabularDataset':
+                       cont_names:OptStrList=None, stats:OptStats=None, log_output:bool=False) -> 'TabularDataset':
         "Create a tabular dataframe from df after applying optional transforms."
         if cat_names is None: cat_names = [n for n in df.columns if is_categorical_dtype(df[n])]
-        if cont_names is None: cont_names = [n for n in df.columns if is_numeric_dtype(df[n]) and not n==dep_var]
+        if cont_names is None:
+            cont_names = [
+                n for n in df.columns if is_numeric_dtype(df[n]) and n != dep_var
+            ]
         if tfms is None: tfms = []
         for i,tfm in enumerate(tfms):
             if isinstance(tfm, TabularTransform): tfm(df, test=True)

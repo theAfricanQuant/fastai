@@ -61,7 +61,7 @@ def get_global_vars(mod):
             key,lineno = node.targets[0].id,node.targets[0].lineno
             codestr = flines[lineno]
             match = re.match(f"^({key})\s*=\s*.*", codestr)
-            if match and match.group(1) != '__all__': # only top level assignment
+            if match and match[1] != '__all__': # only top level assignment
                 d[key] = f'`{codestr}` {get_source_link(mod, lineno)}'
     return d
 
@@ -129,7 +129,7 @@ def get_module_names(path_dir, exclude=None):
     res = [f'{path_dir.name}']
     for f in files:
         if f.is_dir() and f.name in exclude: continue # exclude directories
-        if any([f.name.endswith(ex) for ex in exclude]): continue # exclude extensions
+        if any(f.name.endswith(ex) for ex in exclude): continue # exclude extensions
 
         if f.suffix == '.py': res.append(f'{path_dir.name}.{f.stem}')
         elif f.is_dir(): res += [f'{path_dir.name}.{name}' for name in get_module_names(f)]
@@ -154,12 +154,13 @@ def read_nb_types(cells):
     for i, cell in enumerate(cells):
         if cell['cell_type'] == 'markdown':
             match = re.match(r"^(?:<code>|`)?(\w*)\s*=\s*", cell['source'])
-            if match is not None: doc_fns[match.group(1)] = i
+            if match is not None:
+                doc_fns[match[1]] = i
     return doc_fns
 
 def link_markdown_cells(cells, modules):
     "Create documentation links for all cells in markdown with backticks."
-    for i, cell in enumerate(cells):
+    for cell in cells:
         if cell['cell_type'] == 'markdown':
             cell['source'] = link_docstring(modules, cell['source'])
 
@@ -167,8 +168,7 @@ def get_insert_idx(pos_dict, name):
     "Return the position to insert a given function doc in a notebook."
     keys,i = list(pos_dict.keys()),0
     while i < len(keys) and str.lower(keys[i]) < str.lower(name): i+=1
-    if i == len(keys): return -1
-    else:              return pos_dict[keys[i]]
+    return -1 if i == len(keys) else pos_dict[keys[i]]
 
 def update_pos(pos_dict, start_key, nbr=2):
     "Update the `pos_dict` by moving all positions after `start_key` by `nbr`."
@@ -199,8 +199,7 @@ def generate_missing_metadata(dest_file):
     if has_metadata_cell(metadata_nb['cells'], fn.name): return
     nb = read_nb(fn)
     jmd = nb['metadata'].get('jekyll', {})
-    fmt_params = ''
-    for k,v in jmd.items(): fmt_params += f',\n    {k}={stringify(v)}'
+    fmt_params = ''.join(f',\n    {k}={stringify(v)}' for k, v in jmd.items())
     metadata_cell = get_code_cell(f"update_nb_metadata('{Path(fn).name}'{fmt_params})", hidden=False)
     metadata_nb['cells'].append(metadata_cell)
     write_nb(metadata_nb, meta_fn)
@@ -260,7 +259,12 @@ def remove_code_cell_jupyter_widget_state_elem(cells):
     for c in cells:
         if c['cell_type'] == 'code':
             if 'outputs' in c:
-                c['outputs'] = [l for l in c['outputs'] if not ('data' in l and 'application/vnd.jupyter.widget-view+json' in l.data)]
+                c['outputs'] = [
+                    l
+                    for l in c['outputs']
+                    if 'data' not in l
+                    or 'application/vnd.jupyter.widget-view+json' not in l.data
+                ]
     return cells
 
 def update_module_page(mod, dest_path='.'):
@@ -316,8 +320,7 @@ def update_notebooks(source_path, dest_path=None, update_html=True, update_nb=Fa
         if update_nb:
             mod = import_mod(get_module_from_notebook(source_path))
             if not mod: print('Could not find module for path:', source_path)
-            elif mod.__file__.endswith('__init__.py'): pass
-            else: update_module_page(mod, dest_path)
+            elif not mod.__file__.endswith('__init__.py'): update_module_page(mod, dest_path)
         if update_nb_links: link_nb(doc_path)
         generate_missing_metadata(doc_path)
         if do_execute:
@@ -333,7 +336,7 @@ def update_notebooks(source_path, dest_path=None, update_html=True, update_nb=Fa
         assert dest_path is not None, 'To update a module, you must specify a destination folder for where notebook resides'
         mod = import_mod(source_path.name)
         if not mod: return print('Could not find module for:', source_path)
-        doc_path = Path(dest_path)/(strip_fastai(mod.__name__)+'.ipynb')
+        doc_path = Path(dest_path) / f'{strip_fastai(mod.__name__)}.ipynb'
         if not doc_path.exists():
             print('Notebook does not exist. Creating:', doc_path)
             create_module_page(mod, dest_path)

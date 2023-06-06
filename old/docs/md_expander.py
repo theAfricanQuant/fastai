@@ -15,13 +15,15 @@ def expand(filename):
     within = re.finditer(regex_inside, contents, re.MULTILINE | re.DOTALL)
     outside = re.finditer(regex_outside, contents, re.MULTILINE | re.DOTALL) 
 
-    for matchNum, match in enumerate(within):
-        for groupNum in range(0, len(match.groups())):
+    for match in within:
+        for _ in range(0, len(match.groups())):
             group = match.group(1)
             if group.startswith("class"):
                 classname = re.search(r" (.*?),", group).groups()[0]
                 params = re.search(r",(.*)", group).groups()[0]
-                print('<h2 id="' + classname + '" class="class">Class: ' + classname + '(<span class="params">' + params + '</span></h2>')
+                print(
+                    f'<h2 id="{classname}" class="class">Class: {classname}(<span class="params">{params}</span></h2>'
+                )
 
             print (match.group(1))
 

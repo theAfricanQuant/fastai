@@ -14,9 +14,10 @@ def test_sum_geom():
     assert core.sum_geom(1, 2, 0) == 0
 
 def test_map_none():
-  def fn(x): return x
-  assert core.map_none(None, fn) == None
-  assert core.map_none("not none", fn) == "not none"
+    def fn(x): return x
+
+    assert core.map_none(None, fn) is None
+    assert core.map_none("not none", fn) == "not none"
 
 def test_delistify():
   assert core.delistify([1]) == 1
@@ -144,24 +145,24 @@ def test_apply_leaf():
   assert spy.call_args_list[2][0][0] is layer2
 
 def test_set_trainable():
-  layer1 = torch.nn.Linear(2, 2)
-  layer2 = torch.nn.Linear(2, 1)
-  model = torch.nn.Sequential(layer1, layer2)
+    layer1 = torch.nn.Linear(2, 2)
+    layer2 = torch.nn.Linear(2, 1)
+    model = torch.nn.Sequential(layer1, layer2)
 
-  params_require_grad_before = list(filter(lambda param: param.requires_grad == True,
-                                    model.parameters()))
+    params_require_grad_before = list(filter(lambda param: param.requires_grad == True,
+                                      model.parameters()))
 
-  core.set_trainable(model, False)
+    core.set_trainable(model, False)
 
-  params_require_grad_after = list(filter(lambda param: param.requires_grad == True,
-                                    model.parameters()))
+    params_require_grad_after = list(filter(lambda param: param.requires_grad == True,
+                                      model.parameters()))
 
-  assert len(params_require_grad_before) == 4
-  assert len(params_require_grad_after) == 0
+    assert len(params_require_grad_before) == 4
+    assert not params_require_grad_after
 
-  assert model.trainable == False
-  assert layer1.trainable == False
-  assert layer2.trainable == False
+    assert model.trainable == False
+    assert layer1.trainable == False
+    assert layer2.trainable == False
 
 @mock.patch("fastai.core.optim.SGD")
 def test_SGD_Momentum(sgd_mock):
@@ -215,33 +216,33 @@ def test_num_cpus_without_sched_getaffinity(os_mock):
 
 def test_partition_functionality():
 
-  def test_partition(a, sz, ex):
+    def test_partition(a, sz, ex):
+        result = core.partition(a, sz)
+        assert len(result) == len(ex)
+        assert all(a == b for a, b in zip(result, ex))
+
+    a = [1,2,3,4,5]
+
+    sz = 2
+    ex = [[1,2],[3,4],[5]]
+    test_partition(a, sz, ex)
+
+    sz = 3
+    ex = [[1,2,3],[4,5]]
+    test_partition(a, sz, ex)
+
+    sz = 1
+    ex = [[1],[2],[3],[4],[5]]
+    test_partition(a, sz, ex)
+
+    sz = 6
+    ex = [[1,2,3,4,5]]
+    test_partition(a, sz, ex)
+
+    sz = 3
+    a = []
     result = core.partition(a, sz)
-    assert len(result) == len(ex)
-    assert all([a == b for a, b in zip(result, ex)])
-
-  a = [1,2,3,4,5]
-  
-  sz = 2
-  ex = [[1,2],[3,4],[5]]
-  test_partition(a, sz, ex)
-
-  sz = 3
-  ex = [[1,2,3],[4,5]]
-  test_partition(a, sz, ex)
-
-  sz = 1
-  ex = [[1],[2],[3],[4],[5]]
-  test_partition(a, sz, ex)
-
-  sz = 6
-  ex = [[1,2,3,4,5]]
-  test_partition(a, sz, ex)
-
-  sz = 3
-  a = []
-  result = core.partition(a, sz)
-  assert len(result) == 0
+    assert len(result) == 0
 
 
 def test_partition_error_handling():
@@ -253,32 +254,32 @@ def test_partition_error_handling():
 
 def test_split_by_idxs_functionality():
 
-  seq = [1,2,3,4,5,6]
-  
-  def test_split_by_idxs(seq, idxs, ex):
-    test_result = []
-    for item in core.split_by_idxs(seq, idxs):
-      test_result.append(item)
-    
-    assert len(test_result) == len(ex)
-    assert all([a == b for a,b in zip(test_result, ex)])
-  
-  idxs = [2]
-  ex = [[1,2],[3,4,5,6]]
+    seq = [1,2,3,4,5,6]
 
-  test_split_by_idxs(seq, idxs, ex)
-  
-  idxs = [1,2]
-  ex = [[1],[2],[3,4,5,6]]
-  test_split_by_idxs(seq, idxs, ex)
+    def test_split_by_idxs(seq, idxs, ex):
+        test_result = []
+        for item in core.split_by_idxs(seq, idxs):
+          test_result.append(item)
 
-  idxs = [2,4,5]
-  ex = [[1,2],[3,4],[5],[6]]
-  test_split_by_idxs(seq, idxs, ex)
+        assert len(test_result) == len(ex)
+        assert all(a == b for a,b in zip(test_result, ex))
 
-  idxs = []
-  ex = [[1,2,3,4,5,6]]
-  test_split_by_idxs(seq, idxs, ex)
+    idxs = [2]
+    ex = [[1,2],[3,4,5,6]]
+
+    test_split_by_idxs(seq, idxs, ex)
+
+    idxs = [1,2]
+    ex = [[1],[2],[3,4,5,6]]
+    test_split_by_idxs(seq, idxs, ex)
+
+    idxs = [2,4,5]
+    ex = [[1,2],[3,4],[5],[6]]
+    test_split_by_idxs(seq, idxs, ex)
+
+    idxs = []
+    ex = [[1,2,3,4,5,6]]
+    test_split_by_idxs(seq, idxs, ex)
 
 
 def test_split_by_idxs_error_handling():

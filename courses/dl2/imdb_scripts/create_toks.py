@@ -19,11 +19,12 @@ def fixup(x):
 def get_texts(df, n_lbls, lang='en'):
     if len(df.columns) == 1:
         labels = []
-        texts = f'\n{BOS} {FLD} 1 ' + df[0].astype(str)
+        texts = f'\n{BOS} {FLD} 1 {df[0].astype(str)}'
     else:
         labels = df.iloc[:,range(n_lbls)].values.astype(np.int64)
-        texts = f'\n{BOS} {FLD} 1 ' + df[n_lbls].astype(str)
-        for i in range(n_lbls+1, len(df.columns)): texts += f' {FLD} {i-n_lbls+1} ' + df[i].astype(str)
+        texts = f'\n{BOS} {FLD} 1 {df[n_lbls].astype(str)}'
+        for i in range(n_lbls+1, len(df.columns)):
+            texts += f' {FLD} {i - n_lbls + 1} {df[i].astype(str)}'
     texts = list(texts.apply(fixup).values)
 
     tok = Tokenizer(lang=lang).proc_all_mp(partition_by_cores(texts), lang=lang)

@@ -14,8 +14,7 @@ def get_texts(root):
             with open(wiki_file, encoding='utf-8') as f_in:
                 for line in f_in:
                     article = json.loads(line)
-                    text = article['text']
-                    yield text
+                    yield article['text']
 
 
 def write_file(file_path, text_iter, num_tokens):

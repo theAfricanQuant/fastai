@@ -50,7 +50,7 @@ class Stepper():
         output = self.m(*xs)
         if isinstance(output,tuple): output,*xtra = output
         if self.fp16: self.m.zero_grad()
-        else: self.opt.zero_grad() 
+        else: self.opt.zero_grad()
         loss = raw_loss = self.crit(output, y)
         if self.loss_scale != 1: assert(self.fp16); loss = loss*self.loss_scale
         if self.reg_fn: loss = self.reg_fn(output, xtra, raw_loss)
@@ -60,7 +60,6 @@ class Stepper():
             for param in self.fp32_params: param.grad.data.div_(self.loss_scale)
         if self.clip:   # Gradient clipping
             if IS_TORCH_04: nn.utils.clip_grad_norm(trainable_params_(self.m), self.clip)
-            else: nn.utils.clip_grad_norm(trainable_params_(self.m), self.clip)
         if 'wd' in self.opt.param_groups[0] and self.opt.param_groups[0]['wd'] != 0: 
             #Weight decay out of the loss. After the gradient computation but before the step.
             for group in self.opt.param_groups:
@@ -177,8 +176,7 @@ def fit(model, data, n_epochs, opt, crit, metrics=None, callbacks=None, stepper=
             ep_vals = append_stats(ep_vals, epoch, [debias_loss] + vals)
         if stop: break
     for cb in callbacks: cb.on_train_end()
-    if get_ep_vals: return vals, ep_vals
-    else: return vals
+    return (vals, ep_vals) if get_ep_vals else vals
 
 def append_stats(ep_vals, epoch, values, decimals=6):
     ep_vals[epoch]=list(np.round(values, decimals))
@@ -257,8 +255,7 @@ def predict_batch(m, x):
 def predict_with_targs_(m, dl):
     m.eval()
     if hasattr(m, 'reset'): m.reset()
-    res = []
-    for *x,y in iter(dl): res.append([get_prediction(to_np(m(*VV(x)))),to_np(y)])
+    res = [[get_prediction(to_np(m(*VV(x)))),to_np(y)] for *x, y in iter(dl)]
     return zip(*res)
 
 def predict_with_targs(m, dl):
@@ -290,9 +287,11 @@ def model_summary(m, inputs):
                 params +=  torch.prod(torch.LongTensor(list(module.bias.size())))
             summary[m_key]['nb_params'] = params
 
-        if (not isinstance(module, nn.Sequential) and
-           not isinstance(module, nn.ModuleList) and
-           not (module == m)):
+        if (
+            not isinstance(module, nn.Sequential)
+            and not isinstance(module, nn.ModuleList)
+            and module != m
+        ):
             hooks.append(module.register_forward_hook(hook))
 
     summary = OrderedDict()

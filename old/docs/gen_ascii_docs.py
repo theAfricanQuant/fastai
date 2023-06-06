@@ -51,7 +51,7 @@ def parse_module(file_path):
     for cls_def in cls_defs:
         cls_name = cls_def.name
         cls_bases = ','.join([parse(each) for each in cls_def.bases])
-        tmpl_str += f'== {{{{class {cls_name}{":" + cls_bases if cls_bases else ""}}}}}\n\n'
+        tmpl_str += f'== {{{{class {cls_name}{f":{cls_bases}" if cls_bases else ""}}}}}\n\n'
         method_str = None
         for fn_def in (fn_def for fn_def in cls_def.body if isinstance(fn_def, ast.FunctionDef)):
             if fn_def.name == '__init__':
@@ -87,7 +87,7 @@ def parse_str(o):
     return o.s
 
 def parse_call(o):
-    return o.func.id + '()'
+    return f'{o.func.id}()'
 
 def parse(o):
     return _parser_dict.get(type(o), lambda x: str(x))(o)
@@ -108,11 +108,7 @@ def gen_ascii_docs(src='fastai'):
     os.chdir(Path(__file__).absolute().parent)
     with working_directory('..'):
         path = Path(src)
-        if path.is_dir():
-            file_paths = list(path.glob('**/*.py'))
-        else:
-            file_paths = [path]
-
+        file_paths = list(path.glob('**/*.py')) if path.is_dir() else [path]
     pat = re.compile('^(?!__init__).*.py\Z')
     for file_path in file_paths:
         if pat.match(file_path.name):
@@ -123,7 +119,7 @@ def gen_ascii_docs(src='fastai'):
             (file_path.parent/(file_path.name.rsplit('.',1)[0] + '.adoc.tmpl')).write_text(tmpl_str)
             (file_path.parent/(file_path.name.rsplit('.',1)[0] + '.adoc')).write_text(re.sub(r"{{(.*?)}}", parse_tmpl, tmpl_str, flags=re.DOTALL))
     if path.is_dir():
-        subprocess.call(['asciidoctor', str(path) + '/**/*.adoc'])
+        subprocess.call(['asciidoctor', f'{str(path)}/**/*.adoc'])
     else:
         subprocess.call(['asciidoctor', str(path).rsplit('.',1)[0] + '.adoc'])
 

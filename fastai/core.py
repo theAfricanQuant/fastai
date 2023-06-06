@@ -48,8 +48,7 @@ def is_tuple(x:Any)->bool: return isinstance(x, tuple)
 def noop(x): return x
 
 def to_int(b):
-    if is_listy(b): return [to_int(x) for x in b]
-    else:          return int(b)
+    return [to_int(x) for x in b] if is_listy(b) else int(b)
 
 def ifnone(a:Any,b:Any)->Any:
     "`a` if `a` is not None, otherwise `b`."
@@ -58,11 +57,11 @@ def ifnone(a:Any,b:Any)->Any:
 def uniqueify(x:Series) -> List[Any]: return list(OrderedDict.fromkeys(x).keys())
 def idx_dict(a): return {v:k for k,v in enumerate(a)}
 
-def find_classes(folder:Path)->FilePathList:
+def find_classes(folder:Path) -> FilePathList:
     "List of label subdirectories in imagenet-style `folder`."
     classes = [d for d in folder.iterdir()
                if d.is_dir() and not d.name.startswith('.')]
-    assert(len(classes)>0)
+    assert classes
     return sorted(classes, key=lambda d: d.name)
 
 def arrays_split(mask:NPArrayMask, *arrs:NPArrayableList)->SplitArrayList:
@@ -119,16 +118,12 @@ def get_chunk_length(data:Union[PathOrStr, DataFrame, pd.io.parsers.TextFileRead
     elif (type(data) == pd.io.parsers.TextFileReader):
         dfs = pd.read_csv(data.f, header=None, chunksize=data.chunksize)
     else:  dfs = pd.read_csv(data, header=None, chunksize=chunksize)
-    l = 0
-    for _ in dfs: l+=1
-    return l
+    return sum(1 for _ in dfs)
 
 def get_total_length(csv_name:PathOrStr, chunksize:int) -> int:
     "Read the the total length of a pandas `DataFrame`."
     dfs = pd.read_csv(csv_name, header=None, chunksize=chunksize)
-    l = 0
-    for df in dfs: l+=len(df)
-    return l
+    return sum(len(df) for df in dfs)
 
 def maybe_copy(old_fnames:Collection[PathOrStr], new_fnames:Collection[PathOrStr]):
     "Copy the `old_fnames` to `new_fnames` location if `new_fnames` don't exist or are less recent."

@@ -48,8 +48,9 @@ class FillMissing(TabularTransform):
         for name in self.cont_names:
             if pd.isnull(df[name]).sum():
                 if self.add_col:
-                    df[name+'_na'] = pd.isnull(df[name])
-                    if name+'_na' not in self.cat_names: self.cat_names.append(name+'_na')
+                    df[f'{name}_na'] = pd.isnull(df[name])
+                    if f'{name}_na' not in self.cat_names:
+                        self.cat_names.append(f'{name}_na')
                 if self.fill_strategy == FillStrategy.MEDIAN: filler = df[name].median()
                 elif self.fill_strategy == FillStrategy.CONSTANT: filler = self.fill_val
                 else: filler = df[name].dropna().value_counts().idxmax()
@@ -60,6 +61,7 @@ class FillMissing(TabularTransform):
         for name in self.cont_names:
             if name in self.na_dict:
                 if self.add_col:
-                    df[name+'_na'] = pd.isnull(df[name])
-                    if name+'_na' not in self.cat_names: self.cat_names.append(name+'_na')
+                    df[f'{name}_na'] = pd.isnull(df[name])
+                    if f'{name}_na' not in self.cat_names:
+                        self.cat_names.append(f'{name}_na')
                 df[name] = df[name].fillna(self.na_dict[name])

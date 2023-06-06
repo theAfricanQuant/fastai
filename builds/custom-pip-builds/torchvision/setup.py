@@ -25,31 +25,22 @@ def get_dist(pkgname):
 
 def find_version(*file_paths):
     version_file = read(*file_paths)
-    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
-                              version_file, re.M)
-    if version_match:
-        return version_match.group(1)
+    if version_match := re.search(
+        r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M
+    ):
+        return version_match[1]
     raise RuntimeError("Unable to find version string.")
 
 
 readme = open('README.rst').read()
 
 VERSION = find_version('torchvision', '__init__.py')
-#VERSION = find_version('torchvision', '__init__.py') + ".post2"
-
-requirements = [
-    'numpy',
-    'six',
-]
 #    'torch',
 
 pillow_ver = ' >= 4.1.1'
 pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
-requirements.append(pillow_req + pillow_ver)
-
 tqdm_ver = ' == 4.19.9' if sys.version_info[0] < 3 else ''
-requirements.append('tqdm' + tqdm_ver)
-
+requirements = ['numpy', 'six', pillow_req + pillow_ver, f'tqdm{tqdm_ver}']
 setup(
     # Metadata
     name='torchvision-nightly',
