@@ -100,7 +100,9 @@ class RNNCore(nn.Module):
         self.rnns = torch.nn.ModuleList(self.rnns)
         self.encoder.weight.data.uniform_(-self.initrange, self.initrange)
         self.input_dp = RNNDropout(input_p)
-        self.hidden_dps = nn.ModuleList([RNNDropout(hidden_p) for l in range(n_layers)])
+        self.hidden_dps = nn.ModuleList(
+            [RNNDropout(hidden_p) for _ in range(n_layers)]
+        )
 
     def forward(self, input:LongTensor) -> Tuple[Tensor,Tensor]:
         sl,bs = input.size()

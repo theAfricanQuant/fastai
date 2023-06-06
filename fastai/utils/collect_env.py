@@ -16,15 +16,14 @@ def show_install(show_nvidia_smi:bool=False):
 
     import platform, fastai.version, subprocess
 
-    rep = []
     opt_mods = []
 
-    rep.append(["=== Software ===", None])
-
-    rep.append(["python version", platform.python_version()])
-    rep.append(["fastai version", fastai.__version__])
-    rep.append(["torch version",  torch.__version__])
-
+    rep = [
+        ["=== Software ===", None],
+        ["python version", platform.python_version()],
+        ["fastai version", fastai.__version__],
+        ["torch version", torch.__version__],
+    ]
     # nvidia-smi
     cmd = "nvidia-smi"
     have_nvidia_smi = False
@@ -42,21 +41,33 @@ def show_install(show_nvidia_smi:bool=False):
 
     if have_nvidia_smi:
         smi = result.stdout.decode('utf-8')
-        # matching: "Driver Version: 396.44"
-        match = re.findall(r'Driver Version: +(\d+\.\d+)', smi)
-        if match: rep.append(["nvidia driver", match[0]])
-
-    rep.append(["torch cuda ver", torch.version.cuda])
-    rep.append(["torch cuda is",
-                "available" if torch.cuda.is_available() else "**Not available** "])
-
+        if match := re.findall(r'Driver Version: +(\d+\.\d+)', smi):
+            rep.append(["nvidia driver", match[0]])
+    rep.extend(
+        (
+            ["torch cuda ver", torch.version.cuda],
+            [
+                "torch cuda is",
+                "available"
+                if torch.cuda.is_available()
+                else "**Not available** ",
+            ],
+        )
+    )
     # no point reporting on cudnn if cuda is not available, as it
     # seems to be enabled at times even on cpu-only setups
     if torch.cuda.is_available():
-        rep.append(["torch cudnn ver", torch.backends.cudnn.version()])
-        rep.append(["torch cudnn is",
-                "enabled" if torch.backends.cudnn.enabled else "**Not enabled** "])
-
+        rep.extend(
+            (
+                ["torch cudnn ver", torch.backends.cudnn.version()],
+                [
+                    "torch cudnn is",
+                    "enabled"
+                    if torch.backends.cudnn.enabled
+                    else "**Not enabled** ",
+                ],
+            )
+        )
     rep.append(["\n=== Hardware ===", None])
 
     # it's possible that torch might not see what nvidia-smi sees?
@@ -81,19 +92,23 @@ def show_install(show_nvidia_smi:bool=False):
     if torch_gpu_cnt:
         rep.append(["torch available", torch_gpu_cnt])
         # information for each gpu
-        for i in range(torch_gpu_cnt):
-            rep.append([f"  - gpu{i}", (f"{gpu_total_mem[i]}MB | " if gpu_total_mem else "") + torch.cuda.get_device_name(i)])
+        rep.extend(
+            [
+                f"  - gpu{i}",
+                (f"{gpu_total_mem[i]}MB | " if gpu_total_mem else "")
+                + torch.cuda.get_device_name(i),
+            ]
+            for i in range(torch_gpu_cnt)
+        )
+    elif nvidia_gpu_cnt:
+        rep.append([f"Have {nvidia_gpu_cnt} GPU(s), but torch can't use them (check nvidia driver)", None])
     else:
-        if nvidia_gpu_cnt:
-            rep.append([f"Have {nvidia_gpu_cnt} GPU(s), but torch can't use them (check nvidia driver)", None])
-        else:
-            rep.append([f"No GPUs available", None])
+        rep.append(["No GPUs available", None])
 
 
-    rep.append(["\n=== Environment ===", None])
-
-    rep.append(["platform", platform.platform()])
-
+    rep.extend(
+        (["\n=== Environment ===", None], ["platform", platform.platform()])
+    )
     if platform.system() == 'Linux':
         try:
             import distro
@@ -105,24 +120,26 @@ def show_install(show_nvidia_smi:bool=False):
             # full distro info
             rep.append(["distro", ' '.join(distro.linux_distribution())])
 
-    rep.append(["conda env", get_env('CONDA_DEFAULT_ENV')])
-    rep.append(["python", sys.executable])
-    rep.append(["sys.path", "\n".join(sys.path)])
-
+    rep.extend(
+        (
+            ["conda env", get_env('CONDA_DEFAULT_ENV')],
+            ["python", sys.executable],
+            ["sys.path", "\n".join(sys.path)],
+        )
+    )
     print("\n\n```text")
 
-    keylen = max([len(e[0]) for e in rep if e[1] is not None])
+    keylen = max(len(e[0]) for e in rep if e[1] is not None)
     for e in rep:
         print(f"{e[0]:{keylen}}", (f": {e[1]}" if e[1] is not None else ""))
 
     if have_nvidia_smi:
-        if show_nvidia_smi == True: print(f"\n{smi}")
+        if show_nvidia_smi: print(f"\n{smi}")
+    elif torch_gpu_cnt:
+        # have gpu, but no nvidia-smi
+        print("no nvidia-smi is found")
     else:
-        if torch_gpu_cnt:
-            # have gpu, but no nvidia-smi
-            print("no nvidia-smi is found")
-        else:
-            print("no supported gpus found on this system")
+        print("no supported gpus found on this system")
 
     print("```\n")
 

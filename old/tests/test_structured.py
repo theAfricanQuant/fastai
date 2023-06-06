@@ -10,7 +10,7 @@ def test_proc_df_fix_missing():
     df_test = pd.DataFrame({'col1' : [1, 2, np.NaN], 'col2' : [5, np.NaN, 2]})
 
     # Assume test is the same as train but without target column
-    assert len(set(df_train.columns) - set([y_col])) == len(set(df_test.columns))
+    assert len(set(df_train.columns) - {y_col}) == len(set(df_test.columns))
 
     X_train, y_train, nas_train = proc_df(df_train, y_fld=y_col)
     # We are expecting nas_train to contain one column

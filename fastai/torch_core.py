@@ -83,8 +83,7 @@ def to_data(b:ItemsList):
 def to_device(b:Tensors, device:torch.device):
     "Ensure `b` is on `device`."
     device = ifnone(device, defaults.device)
-    if is_listy(b): return [to_device(o, device) for o in b]
-    return b.to(device)
+    return [to_device(o, device) for o in b] if is_listy(b) else b.to(device)
 
 def data_collate(batch:ItemsList)->Tensor:
     "Convert `batch` items to tensor data."
@@ -97,10 +96,9 @@ def requires_grad(m:nn.Module, b:Optional[bool]=None)->Optional[bool]:
     if b is None: return ps[0].requires_grad
     for p in ps: p.requires_grad=b
 
-def trainable_params(m:nn.Module)->ParamList:
+def trainable_params(m:nn.Module) -> ParamList:
     "Return list of trainable params in `m`."
-    res = filter(lambda p: p.requires_grad, m.parameters())
-    return res
+    return filter(lambda p: p.requires_grad, m.parameters())
 
 def children(m:nn.Module)->ModuleList:
     "Get children of module `m`."
@@ -207,7 +205,6 @@ def model_type(dtype):
 def np2model_tensor(a):
     dtype = model_type(a.dtype)
     res = as_tensor(a)
-    if not dtype: return res
-    return res.type(dtype)
+    return res if not dtype else res.type(dtype)
 
 def trange_of(x): return torch.arange(len(x))

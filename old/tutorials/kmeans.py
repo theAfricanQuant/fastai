@@ -35,7 +35,7 @@ class Kmeans(object):
         # Begin main algorithm
         tf.global_variables_initializer().run()
         c = initial_centroids
-        for i in range(10):
+        for _ in range(10):
             c2 = curr_centroids.assign(updated_centroids).eval()
             if np.allclose(c,c2): break
             c=c2
@@ -46,7 +46,7 @@ class Kmeans(object):
         r_index = tf.random_uniform([1], 0, self.n_data, dtype=tf.int32)
         r = tf.expand_dims(self.v_data[tf.squeeze(r_index)], dim=1)
         initial_centroids = []
-        for i in range(k):
+        for _ in range(k):
             dist = all_distances(self.v_data, r)
             farthest_index = tf.argmax(tf.reduce_min(dist, axis=0), 0)
             farthest_point = self.v_data[tf.to_int32(farthest_index)]

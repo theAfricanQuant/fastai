@@ -82,7 +82,7 @@ def get_emb(feat):
         c2 = cat_var_dict[name]
     else:
         c2 = (c+2)//3
-        if c2>50: c2=50
+        c2 = min(c2, 50)
     inp = Input((1,), dtype='int64', name=name+'_in')
     if init_emb:
         u = Flatten(name=name+'_flt')(Embedding(c, c2, input_length=1)(inp))

@@ -23,7 +23,7 @@ def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards
     torch.cuda.set_device(cuda_id)
 
     PRE = 'bwd_' if backwards else 'fwd_'
-    PRE = 'bpe_' + PRE if bpe else PRE
+    PRE = f'bpe_{PRE}' if bpe else PRE
     IDS = 'bpe' if bpe else 'ids'
     train_file_id = train_file_id if train_file_id == '' else f'_{train_file_id}'
     dir_path = Path(dir_path)
@@ -47,7 +47,7 @@ def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards
         val_sent = np.load(dir_path / 'tmp' / f'val_{IDS}.npy')
 
     trn_lbls = np.load(dir_path / 'tmp' / f'lbl_trn{train_file_id}.npy')
-    val_lbls = np.load(dir_path / 'tmp' / f'lbl_val.npy')
+    val_lbls = np.load(dir_path / 'tmp' / 'lbl_val.npy')
     assert trn_lbls.shape[1] == 1 and val_lbls.shape[1] == 1, 'This classifier uses cross entropy loss and only support single label samples'
     trn_lbls = trn_lbls.flatten()
     val_lbls = val_lbls.flatten()
@@ -84,8 +84,8 @@ def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards
     learn.clip=25.
     learn.metrics = [accuracy]
 
-    lrm = 2.6
     if use_discriminative:
+        lrm = 2.6
         lrs = np.array([lr/(lrm**4), lr/(lrm**3), lr/(lrm**2), lr/lrm, lr])
     else:
         lrs = lr

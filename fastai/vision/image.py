@@ -373,8 +373,7 @@ def show_image(img:Image, ax:plt.Axes=None, figsize:tuple=(3,3), hide_axis:bool=
 def scale_flow(flow, to_unit=True):
     "Scale the coords in `flow` to -1/1 or the image size depending on `to_unit`."
     s = tensor([flow.size[0]/2,flow.size[1]/2])[None]
-    if to_unit: flow.flow = flow.flow/s-1
-    else:       flow.flow = (flow.flow+1)*s
+    flow.flow = flow.flow/s-1 if to_unit else (flow.flow+1)*s
     return flow
 
 def _remove_points_out(flow:FlowField):

@@ -21,7 +21,8 @@ use_relative_links = True
 _typing_names = {t:n for t,n in fastai_types.items() if t.__module__=='typing'}
 
 
-def is_enum(cls): return cls == enum.Enum or cls == enum.EnumMeta
+def is_enum(cls):
+    return cls in [enum.Enum, enum.EnumMeta]
 
 def link_type(arg_type, arg_name=None, include_bt:bool=True):
     "Create link to documentation."
@@ -78,8 +79,7 @@ def format_ft_def(func, full_name:str=None)->str:
 def get_enum_doc(elt, full_name:str) -> str:
     "Formatted enum documentation."
     vals = ', '.join(elt.__members__.keys())
-    doc = f'{code_esc(full_name)}\n`Enum` = [{vals}]'
-    return doc
+    return f'{code_esc(full_name)}\n`Enum` = [{vals}]'
 
 def get_cls_doc(elt, full_name:str) -> str:
     "Class definition."
@@ -103,7 +103,7 @@ def show_doc(elt, doc_string:bool=True, full_name:str=None, arg_comments:dict=No
     title_level = ifnone(title_level, 2 if inspect.isclass(elt) else 4)
     doc += '\n'
     if doc_string and (inspect.getdoc(elt) or arg_comments):
-        doc += format_docstring(elt, arg_comments, alt_doc_string, ignore_warn) + ' '
+        doc += f'{format_docstring(elt, arg_comments, alt_doc_string, ignore_warn)} '
     if is_fastai_class(elt): doc += get_function_source(elt)
     md = title_md(link+doc, title_level, markdown=markdown)
     if markdown: display(md)
@@ -126,9 +126,11 @@ def format_docstring(elt, arg_comments:dict={}, alt_doc_string:str='', ignore_wa
     "Merge and format the docstring definition with `arg_comments` and `alt_doc_string`."
     parsed = ""
     doc = parse_docstring(inspect.getdoc(elt))
-    description = alt_doc_string or f"{doc['short_description']} {doc['long_description']}"
-    if description: parsed += f'\n\n{link_docstring(inspect.getmodule(elt), description)}'
-
+    if (
+        description := alt_doc_string
+        or f"{doc['short_description']} {doc['long_description']}"
+    ):
+        parsed += f'\n\n{link_docstring(inspect.getmodule(elt), description)}'
     resolved_comments = {**doc.get('comments', {}), **arg_comments} # arg_comments takes priority
     args = inspect.getfullargspec(elt).args if not is_enum(elt.__class__) else elt.__members__.keys()
     if resolved_comments: parsed += '\n'
@@ -136,8 +138,8 @@ def format_docstring(elt, arg_comments:dict={}, alt_doc_string:str='', ignore_wa
         parsed += f'\n- *{a}*: {resolved_comments[a]}'
         if a not in args and not ignore_warn: warn(f'Doc arg mismatch: {a}')
 
-    return_comment = arg_comments.get('return') or doc.get('return')
-    if return_comment: parsed += f'\n\n*return*: {return_comment}'
+    if return_comment := arg_comments.get('return') or doc.get('return'):
+        parsed += f'\n\n*return*: {return_comment}'
     return parsed
 
 _modvars = {}
@@ -145,8 +147,7 @@ _modvars = {}
 def replace_link(m):
     keyword = m.group(1) or m.group(2)
     elt = find_elt(_modvars, keyword)
-    if elt is None: return m.group()
-    return link_type(elt, arg_name=keyword)
+    return m.group() if elt is None else link_type(elt, arg_name=keyword)
 
 # Finds all places with a backtick but only if it hasn't already been linked
 BT_REGEX = re.compile("\[`([^`]*)`\](?:\([^)]*\))|`([^`]*)`") # matches [`key`](link) or `key`
@@ -169,9 +170,11 @@ def import_mod(mod_name:str, ignore_errors=False):
     "Return module from `mod_name`."
     splits = str.split(mod_name, '.')
     try:
-        if len(splits) > 1 : mod = importlib.import_module('.' + '.'.join(splits[1:]), splits[0])
-        else: mod = importlib.import_module(mod_name)
-        return mod
+        return (
+            importlib.import_module('.' + '.'.join(splits[1:]), splits[0])
+            if len(splits) > 1
+            else importlib.import_module(mod_name)
+        )
     except: 
         if not ignore_errors: print(f"Module {mod_name} doesn't exist.")
 
@@ -250,8 +253,7 @@ def get_class_toc(mod_name:str, cls_name:str):
         elt = getattr(elt, split)
     assert inspect.isclass(elt) and not is_enum(elt.__class__), "This is not a valid class."
     in_ft_names = get_inner_fts(elt)
-    tabmat = ''
-    for name in in_ft_names: tabmat += f'- [{name}](#{name})\n'
+    tabmat = ''.join(f'- [{name}](#{name})\n' for name in in_ft_names)
     display(Markdown(tabmat))
 
 def show_video(url):
@@ -264,9 +266,10 @@ def show_video_from_youtube(code, start=0):
     url = f'https://www.youtube.com/embed/{code}?start={start}&amp;rel=0&amp;controls=0&amp;showinfo=0'
     return show_video(url)
 
-def get_anchor(fn)->str:
+def get_anchor(fn) -> str:
     if hasattr(fn,'__qualname__'): return fn.__qualname__
-    if inspect.ismethod(fn): return fn_name(fn.__self__) + '.' + fn_name(fn)
+    if inspect.ismethod(fn):
+        return f'{fn_name(fn.__self__)}.{fn_name(fn)}'
     return fn_name(fn)
 
 def fn_name(ft)->str:
@@ -312,8 +315,7 @@ def get_source_link(mod, lineno, display_text="[source]") -> str:
     "Returns link to `lineno` in source code of `mod`."
     github_path = mod.__name__.replace('.', '/')
     link = f"{SOURCE_URL}{github_path}.py#L{lineno}"
-    if display_text is None: return link
-    return f'<a href="{link}">{display_text}</a>'
+    return link if display_text is None else f'<a href="{link}">{display_text}</a>'
 
 def get_function_source(ft, **kwargs) -> str:
     "Returns link to `ft` in source code."

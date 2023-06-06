@@ -62,7 +62,7 @@ def train_epoch(model:Model, dl:DataLoader, opt:optim.Optimizer, loss_func:LossF
         opt.zero_grad()
 
 def fit(epochs:int, model:Model, loss_func:LossFunction, opt:optim.Optimizer,
-        data:DataBunch, callbacks:Optional[CallbackList]=None, metrics:OptMetrics=None)->None:
+        data:DataBunch, callbacks:Optional[CallbackList]=None, metrics:OptMetrics=None) -> None:
     "Fit the `model` on `data` and learn using `loss` and `opt`."
     cb_handler = CallbackHandler(callbacks, metrics)
     pbar = master_bar(range(epochs))
@@ -86,7 +86,7 @@ def fit(epochs:int, model:Model, loss_func:LossFunction, opt:optim.Optimizer,
             if cb_handler.on_epoch_end(val_loss): break
     except Exception as e:
         exception = e
-        raise e
+        raise exception
     finally: cb_handler.on_train_end(exception)
 
 @dataclass

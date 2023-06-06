@@ -65,8 +65,7 @@ class TextDataset(BaseTextDataset):
         with open(self.id_files[2]) as f:
             if h.hexdigest() != f.read() or len(itos) > self.max_vocab + 2: return False
         toks,ids = np.load(self.tok_files[0]),np.load(self.id_files[0])
-        if len(toks) != len(ids): return False
-        return True
+        return len(toks) == len(ids)
 
     def check_toks(self) -> bool:
         "Check if a new tokenization is needed."
@@ -88,8 +87,9 @@ class TextDataset(BaseTextDataset):
             lbl_type = np.float32 if len(self.label_cols) > 1 else np.int64
             lbls = df[self.label_cols].values.astype(lbl_type) if (len(self.label_cols) > 0) else []
             self.txt_cols = ifnone(self.txt_cols, list(range(len(self.label_cols),len(df.columns))))
-            texts = f'{FLD} {1} ' + df[self.txt_cols[0]].astype(str)
-            for i, col in enumerate(self.txt_cols[1:]):  texts += f' {FLD} {i+2} ' + df[col].astype(str)
+            texts = f'{FLD} 1 {df[self.txt_cols[0]].astype(str)}'
+            for i, col in enumerate(self.txt_cols[1:]):
+                texts += f' {FLD} {i + 2} {df[col].astype(str)}'
             toks = self.tokenizer.process_all(texts)
             tokens += toks
             labels += list(np.squeeze(lbls))
@@ -168,9 +168,10 @@ class TextDataset(BaseTextDataset):
         tokenizer = ifnone(tokenizer, Tokenizer())
         path = Path(folder)/'tmp'
         os.makedirs(path, exist_ok=True)
-        texts = []
-        for fname in (Path(folder)/name).glob('*.*'):
-            texts.append(fname.open('r', encoding='utf8').read())
+        texts = [
+            fname.open('r', encoding='utf8').read()
+            for fname in (Path(folder) / name).glob('*.*')
+        ]
         texts,labels = np.array(texts),np.array([classes[0]] * len(texts))
         if shuffle:
             idx = np.random.permutation(len(texts))
@@ -273,7 +274,7 @@ class SortishSampler(Sampler):
 
 def pad_collate(samples:BatchSamples, pad_idx:int=1, pad_first:bool=True) -> Tuple[LongTensor, LongTensor]:
     "Function that collect samples and adds padding."
-    max_len = max([len(s[0]) for s in samples])
+    max_len = max(len(s[0]) for s in samples)
     res = torch.zeros(max_len, len(samples)).long() + pad_idx
     for i,s in enumerate(samples): 
         if pad_first: res[-len(s[0]):,i] = LongTensor(s[0])

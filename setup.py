@@ -3,6 +3,7 @@
 
 """The setup script."""
 
+
 import sys
 from pathlib import Path
 from setuptools import setup, find_packages
@@ -10,7 +11,7 @@ from setuptools import setup, find_packages
 # note: version is maintained inside fastai/version.py
 exec(open('fastai/version.py').read())
 
-with open('README.md') as readme_file:   readme = readme_file.read()
+readme = Path('README.md').read_text()
 
 def to_list(buffer): return list(filter(None, map(str.strip, buffer.splitlines())))
 

@@ -71,7 +71,7 @@ def predict_text(stoi, model, text):
     # prefix text with tokens:
     #   xbos: beginning of sentence
     #   xfld 1: we are using a single field here
-    input_str = 'xbos xfld 1 ' + text
+    input_str = f'xbos xfld 1 {text}'
 
     # predictions are done on arrays of input.
     # We only have a single input, so turn it into a 1x1 array
@@ -106,12 +106,12 @@ def predict_input(itos_filename, trained_classifier_filename):
 
     # Check the itos file exists
     if not os.path.exists(itos_filename):
-        print("Could not find " + itos_filename)
+        print(f"Could not find {itos_filename}")
         exit(-1)
 
     # Check the classifier file exists
     if not os.path.exists(trained_classifier_filename):
-        print("Could not find " + trained_classifier_filename)
+        print(f"Could not find {trained_classifier_filename}")
         exit(-1)
 
     stoi, model = load_model(itos_filename, trained_classifier_filename)
@@ -120,10 +120,9 @@ def predict_input(itos_filename, trained_classifier_filename):
         text = input("Enter text to analyse (or q to quit): ")
         if text == 'q':
             break
-        else:
-            scores = predict_text(stoi, model, text)
-            classes = [False, True]
-            print("Result: {0}, Scores: {1}".format(classes[np.argmax(scores)], scores))
+        scores = predict_text(stoi, model, text)
+        classes = [False, True]
+        print("Result: {0}, Scores: {1}".format(classes[np.argmax(scores)], scores))
 
 
 

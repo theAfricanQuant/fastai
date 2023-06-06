@@ -16,7 +16,7 @@ def convert_weights(wgts:Weights, stoi_wgts:Dict[str,int], itos_new:Collection[s
     new_w = enc_wgts.new_zeros((len(itos_new),enc_wgts.size(1))).zero_()
     new_b = dec_bias.new_zeros((len(itos_new),)).zero_()
     for i,w in enumerate(itos_new):
-        r = stoi_wgts[w] if w in stoi_wgts else -1
+        r = stoi_wgts.get(w, -1)
         new_w[i] = enc_wgts[r] if r>=0 else wgts_m
         new_b[i] = dec_bias[r] if r>=0 else bias_m
     wgts['0.encoder.weight'] = new_w
@@ -98,5 +98,4 @@ class RNNLearner(Learner):
         ps = [dps[4]] + ps
         model = get_rnn_classifier(bptt, max_len, n_class, vocab_size, emb_sz, nh, nl, pad_token,
                     layers, ps, input_p=dps[0], weight_p=dps[1], embed_p=dps[2], hidden_p=dps[3], qrnn=qrnn)
-        learn = cls(data, model, bptt, split_func=rnn_classifier_split, **kwargs)
-        return learn
+        return cls(data, model, bptt, split_func=rnn_classifier_split, **kwargs)

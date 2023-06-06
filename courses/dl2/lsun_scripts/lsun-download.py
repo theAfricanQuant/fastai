@@ -15,7 +15,7 @@ __license__ = 'MIT'
 
 
 def list_categories(tag):
-    url = 'http://lsun.cs.princeton.edu/htbin/list.cgi?tag=' + tag
+    url = f'http://lsun.cs.princeton.edu/htbin/list.cgi?tag={tag}'
     f = urlopen(url)
     return json.loads(f.read())
 
@@ -47,15 +47,14 @@ def main():
             download(args.out_dir, category, 'train', args.tag)
             download(args.out_dir, category, 'val', args.tag)
         download(args.out_dir, '', 'test', args.tag)
+    elif args.category == 'test':
+        download(args.out_dir, '', 'test', args.tag)
+    elif args.category not in categories:
+        print('Error:', args.category, "doesn't exist in",
+              args.tag, 'LSUN release')
     else:
-        if args.category == 'test':
-            download(args.out_dir, '', 'test', args.tag)
-        elif args.category not in categories:
-            print('Error:', args.category, "doesn't exist in",
-                  args.tag, 'LSUN release')
-        else:
-            download(args.out_dir, args.category, 'train', args.tag)
-            download(args.out_dir, args.category, 'val', args.tag)
+        download(args.out_dir, args.category, 'train', args.tag)
+        download(args.out_dir, args.category, 'val', args.tag)
 
 
 if __name__ == '__main__':

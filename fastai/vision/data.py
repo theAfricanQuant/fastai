@@ -13,7 +13,9 @@ __all__ = ['DatasetTfm', 'ImageDataset', 'ImageClassificationDataset', 'ImageMul
 
 TfmList = Collection[Transform]
 
-image_extensions = set(k for k,v in mimetypes.types_map.items() if v.startswith('image/'))
+image_extensions = {
+    k for k, v in mimetypes.types_map.items() if v.startswith('image/')
+}
 
 def get_image_files(c:Path, check_ext:bool=True)->FilePathList:
     "Return list of files in `c` that are images. `check_ext` will filter to `image_extensions`."
@@ -25,9 +27,7 @@ def get_annotations(fname, prefix=None):
     "Open a COCO style json in `fname` and returns the lists of filenames (with `prefix`), bboxes and labels."
     annot_dict = json.load(open(fname))
     id2images, id2bboxes, id2cats = {}, collections.defaultdict(list), collections.defaultdict(list)
-    classes = {}
-    for o in annot_dict['categories']:
-        classes[o['id']] = o['name']
+    classes = {o['id']: o['name'] for o in annot_dict['categories']}
     for o in annot_dict['annotations']:
         bb = o['bbox']
         id2bboxes[o['image_id']].append([bb[1],bb[0], bb[3]+bb[1], bb[2]+bb[0]])
@@ -39,13 +39,13 @@ def get_annotations(fname, prefix=None):
     return [id2images[k] for k in ids], [id2bboxes[k] for k in ids], [id2cats[k] for k in ids]
 
 def show_image_batch(dl:DataLoader, classes:Collection[str], rows:int=None, figsize:Tuple[int,int]=(12,15),
-                     denorm:Callable=None)->None:
+                     denorm:Callable=None) -> None:
     "Show a few images from a batch."
     x,y = dl.one_batch()
     if rows is None: rows = int(math.sqrt(len(x)))
-    x = x[:rows*rows].cpu()
+    x = x[:rows**2].cpu()
     if denorm: x = denorm(x)
-    show_images(x,y[:rows*rows].cpu(),rows, classes, figsize)
+    show_images(x, y[:rows**2].cpu(), rows, classes, figsize)
 
 def show_xy_images(x:Tensor,y:Tensor,rows:int,figsize:tuple=(9,9)):
     "Show a selection of images and targets from a given batch."
@@ -139,7 +139,7 @@ class ImageMultiDataset(LabelDataset):
         classes:Optional[Classes]=None):
         path = Path(path)
         folder_path = (path/folder).absolute()
-        train,valid = random_split(valid_pct, f'{folder_path}/' + fns, labels)
+        train,valid = random_split(valid_pct, f'{folder_path}/{fns}', labels)
         train_ds = cls(*train, classes=classes)
         return [train_ds,cls(*valid, classes=train_ds.classes)]
 
@@ -284,7 +284,7 @@ class ImageDataBunch(DataBunch):
 
     @classmethod
     def from_df(cls, path:PathOrStr, df:pd.DataFrame, folder:PathOrStr='.', sep=None, valid_pct:float=0.2,
-            fn_col:int=0, label_col:int=1, test:Optional[PathOrStr]=None, suffix:str=None, **kwargs:Any)->'ImageDataBunch':
+            fn_col:int=0, label_col:int=1, test:Optional[PathOrStr]=None, suffix:str=None, **kwargs:Any) -> 'ImageDataBunch':
         "Create from a DataFrame."
         path = Path(path)
         fnames, labels = _df_to_fns_labels(df, suffix=suffix, label_delim=sep, fn_col=fn_col, label_col=label_col)
@@ -294,7 +294,9 @@ class ImageDataBunch(DataBunch):
             if test: datasets.append(ImageMultiDataset.from_single_folder(path/test, classes=datasets[0].classes))
         else:
             folder_path = (path/folder).absolute()
-            (train_fns,train_lbls), (valid_fns,valid_lbls) = random_split(valid_pct, f'{folder_path}/' + fnames, labels)
+            (train_fns, train_lbls), (valid_fns, valid_lbls) = random_split(
+                valid_pct, f'{folder_path}/{fnames}', labels
+            )
             classes = uniqueify(labels)
             datasets = [ImageClassificationDataset(train_fns, train_lbls, classes)]
             datasets.append(ImageClassificationDataset(valid_fns, valid_lbls, classes))

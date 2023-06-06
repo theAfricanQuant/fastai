@@ -33,7 +33,7 @@ def data_folder(root_folder):
     for i in range(1, 11):  # Create folder with images "1.png", "2.png".."10.png"
         img_array = np.random.rand(100, 100, 3) * 255
         img = Image.fromarray(img_array.astype('uint8')).convert('RGBA')
-        img.save(str(folder.join(str(i) + '.png')))
+        img.save(str(folder.join(f'{str(i)}.png')))
     return folder
 
 

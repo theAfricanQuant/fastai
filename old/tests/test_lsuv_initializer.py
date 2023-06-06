@@ -24,8 +24,9 @@ def image_data():
 def add_hooks(m, fn):
     hooks = []
     def add_hook(m):
-        if (isinstance(m, nn.Conv2d)) or (isinstance(m, nn.Linear)):
+        if isinstance(m, (nn.Conv2d, nn.Linear)):
             hooks.append(m.register_forward_hook(fn))
+
     m.apply(add_hook)
     return hooks
 def remove_hooks(hooks): [h.remove() for h in hooks]

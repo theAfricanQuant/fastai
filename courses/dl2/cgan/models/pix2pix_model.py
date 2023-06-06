@@ -42,9 +42,10 @@ class Pix2PixModel(BaseModel):
                                                 lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
-            for optimizer in self.optimizers:
-                self.schedulers.append(networks.get_scheduler(optimizer, opt))
-
+            self.schedulers.extend(
+                networks.get_scheduler(optimizer, opt)
+                for optimizer in self.optimizers
+            )
         print('---------- Networks initialized -------------')
         networks.print_network(self.netG)
         if self.isTrain:

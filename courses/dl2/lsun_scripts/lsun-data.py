@@ -17,10 +17,9 @@ def export_images(db_path, out_dir, flat=False):
         cursor = txn.cursor()
         for key, val in tqdm(cursor):
             key = key.decode()
-            if not flat: image_out_dir = join(out_dir, '/'.join(key[:3]))
-            else: image_out_dir = out_dir
+            image_out_dir = join(out_dir, '/'.join(key[:3])) if not flat else out_dir
             if not exists(image_out_dir): os.makedirs(image_out_dir)
-            image_out_path = join(image_out_dir, key + '.jpg')
+            image_out_path = join(image_out_dir, f'{key}.jpg')
             with open(image_out_path, 'wb') as fp: fp.write(val)
 
 

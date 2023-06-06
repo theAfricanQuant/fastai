@@ -20,7 +20,7 @@ class UnetBlock(nn.Module):
         self.upconv = conv2d_trans(ni, ni//2) # H, W -> 2H, 2W
         ni = ni//2 + x_in_c
         self.conv1 = conv2d(ni, ni//2)
-        ni = ni//2
+        ni //= 2
         self.conv2 = conv2d(ni, ni)
         self.bn = nn.BatchNorm2d(ni)
 

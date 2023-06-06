@@ -51,14 +51,12 @@ class CycleGANModel(BaseModel):
                                                 lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizer_D_A = torch.optim.Adam(self.netD_A.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizer_D_B = torch.optim.Adam(self.netD_B.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizers = []
             self.schedulers = []
-            self.optimizers.append(self.optimizer_G)
-            self.optimizers.append(self.optimizer_D_A)
-            self.optimizers.append(self.optimizer_D_B)
-            for optimizer in self.optimizers:
-                self.schedulers.append(networks.get_scheduler(optimizer, opt))
-
+            self.optimizers = [self.optimizer_G, self.optimizer_D_A, self.optimizer_D_B]
+            self.schedulers.extend(
+                networks.get_scheduler(optimizer, opt)
+                for optimizer in self.optimizers
+            )
         print('---------- Networks initialized -------------')
         networks.print_network(self.netG_A)
         networks.print_network(self.netG_B)

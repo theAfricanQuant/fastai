@@ -177,14 +177,17 @@ def zoom_crop(scale:float, do_rand:bool=False, p:float=1.0):
     crop_fn = rand_crop if do_rand else crop_pad
     return [zoom_fn(scale=scale, p=p), crop_fn()]
 
-def _find_coeffs(orig_pts:Points, targ_pts:Points)->Tensor:
+def _find_coeffs(orig_pts:Points, targ_pts:Points) -> Tensor:
     "Find 8 coeff mentioned [here](https://web.archive.org/web/20150222120106/xenia.media.mit.edu/~cwren/interpolator/)."
     matrix = []
     #The equations we'll need to solve.
     for p1, p2 in zip(targ_pts, orig_pts):
-        matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0]*p1[0], -p2[0]*p1[1]])
-        matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1]*p1[0], -p2[1]*p1[1]])
-
+        matrix.extend(
+            (
+                [p1[0], p1[1], 1, 0, 0, 0, -p2[0] * p1[0], -p2[0] * p1[1]],
+                [0, 0, 0, p1[0], p1[1], 1, -p2[1] * p1[0], -p2[1] * p1[1]],
+            )
+        )
     A = FloatTensor(matrix)
     B = FloatTensor(orig_pts).view(8)
     #The 8 scalars we seek are solution of AX = B
